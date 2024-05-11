@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Best Path Calculation</title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDacJhpqXKa3lEVLNGMIHG0UcYMgrJY-fI"></script>
+</head>
+<body>
+    <h1>Best Path Calculation</h1>
+    <form id="form">
+        <label for="start_location">Start Location:</label>
+        <input type="text" id="start_location" name="start_location" required><br><br>
+        <label for="end_location">End Location:</label>
+        <input type="text" id="end_location" name="end_location" required><br><br>
+        <button type="button" id="calculate_path">Calculate Best Path</button><br><br>
+    </form>
+    <div id="map" style="height: 400px;"></div>
+    <p>Best Path: <span id="best_path"></span></p>
+    <script>
+        var map;
+        var directionsService;
+        var directionsRenderer;
+
+        document.getElementById('calculate_path').addEventListener('click', function () {
+            const start_location = document.getElementById('start_location').value;
+            const end_location = document.getElementById('end_location').value;
+
+            fetch('/calculate_best_path', {
+                method: 'POST',
+                body: new URLSearchParams({ start_location, end_location }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                const bestPathDiv = document.getElementById('best_path');
+                bestPathDiv.textContent = '';
+
+                if (data.best_path) {
+                    bestPathDiv.textContent = 'Calculating...';
+
+                    // Initialize the map
+                    map = new google.maps.Map(document.getElementById('map'), {
+                        center: { lat: 0, lng: 0 },
+                        zoom: 10,
+                    });
+                    directionsService = new google.maps.DirectionsService();
+                    directionsRenderer = new google.maps.DirectionsRenderer({ map });
+
+                    // Calculate and display the best path
+                    calculateAndDisplayRoute(start_location, end_location);
+                } else if (data.error) {
+                    bestPathDiv.textContent = `Error: ${data.error}`;
+                }
+            });
+        });
+
+        function calculateAndDisplayRoute(start, end) {
+            const request = {
+                origin: start,
+                destination: end,
+                travelMode: google.maps.TravelMode.DRIVING
+            };
+            directionsService.route(request, function(response, status) {
+                if (status === 'OK') {
+                    directionsRenderer.setDirections(response);
+                } else {
+                    alert('Directions request failed due to ' + status);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
